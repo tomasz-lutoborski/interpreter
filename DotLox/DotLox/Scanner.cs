@@ -1,18 +1,14 @@
-using System.Data.Common;
-using System.Globalization;
-using System.Security.Principal;
-
 namespace DotLox;
 
 public class Scanner
 {
     private readonly string _source;
     private readonly List<Token> _tokens = new();
-    private int _start = 0;
-    private int _current = 0;
+    private int _start;
+    private int _current;
     private int _line = 1;
 
-    private static readonly Dictionary<string, TokenType> _keywords = new()
+    private static readonly Dictionary<string, TokenType> Keywords = new()
     {
         { "and", TokenType.And },
         { "class", TokenType.Class },
@@ -37,7 +33,7 @@ public class Scanner
         _source = source;
     }
 
-    List<Token> ScanTokens()
+    public List<Token> ScanTokens()
     {
         while (!IsAtEnd())
         {
@@ -45,7 +41,7 @@ public class Scanner
             ScanToken();
         }
 
-        _tokens.Add(new Token(TokenType.Eof, "", null, _line));
+        _tokens.Add(new Token(TokenType.Eof, "", null!, _line));
         return _tokens;
     }
 
@@ -104,7 +100,7 @@ public class Scanner
             case ' ':
             case '\r':
             case '\t':
-// Ignore whitespace.
+                // Ignore whitespace.
                 break;
             case '\n':
                 _line++;
@@ -124,7 +120,7 @@ public class Scanner
                 String();
                 break;
             default:
-                if (IsDigit(c))
+                if (char.IsDigit(c))
                 {
                     Number();
                 }
@@ -148,19 +144,19 @@ public class Scanner
 
     private bool IsAlphaNumeric(char c)
     {
-        return IsAlpha(c) || IsDigit(c);
+        return IsAlpha(c) || char.IsDigit(c);
     }
 
     private void Identifier()
     {
-        while (IsAlphaNumeric(Peek())) Advance();
+        while (IsAlphaNumeric(Peek() ?? '-')) Advance();
 
         string text = _source.Substring(_start, _current);
 
         TokenType type;
-        if (_keywords.ContainsKey(text))
+        if (Keywords.ContainsKey(text))
         {
-            type = _keywords[text];
+            type = Keywords[text];
         }
         else
         {
@@ -171,11 +167,6 @@ public class Scanner
         AddToken(type);
     }
 
-    private bool IsDigit(char c)
-    {
-        return c <= 9 && c >= 0;
-    }
-
     private char PeekNext()
     {
         if (_current + 1 >= _source.Length) return '\0';
@@ -184,15 +175,15 @@ public class Scanner
 
     private void Number()
     {
-        while (IsDigit(Peek())) Advance();
+        while (char.IsDigit(Peek() ?? 'a')) Advance();
 
-        if (Peek() == '.' && IsDigit(PeekNext()))
+        if (Peek() == '.' && char.IsDigit(PeekNext()))
         {
             Advance();
-            while (IsDigit(Peek())) Advance();
+            while (char.IsDigit(Peek() ?? 'a')) Advance();
         }
 
-        AddToken(TokenType.Number, Double.Parse(_source.Substring(_start, _current)));
+        AddToken(TokenType.Number, Double.Parse(_source.Substring(_start, _current - _start)));
     }
 
     private void String()
@@ -211,13 +202,13 @@ public class Scanner
 
         Advance();
 
-        string value = _source.Substring(_start + 1, _current - 1);
+        string? value = _source.Substring(_start + 1, _current - 1);
         AddToken(TokenType.String, value);
     }
 
-    private char Peek()
+    private char? Peek()
     {
-        if (IsAtEnd()) return '\0';
+        if (IsAtEnd()) return null;
         return _source[_current];
     }
 
@@ -232,18 +223,12 @@ public class Scanner
 
     private char Advance()
     {
-        _current++;
-        return _source[_current - 1];
+        return _source[_current++];
     }
 
-    private void AddToken(TokenType type)
+    private void AddToken(TokenType type, object? literal = null)
     {
-        AddToken(type, null);
-    }
-
-    private void AddToken(TokenType type, Object literal)
-    {
-        String text = _source.Substring(_start, _current);
+        String text = _source.Substring(_start, _current - _start);
         _tokens.Add(new Token(type, text, literal, _line));
     }
 }

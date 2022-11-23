@@ -1,5 +1,3 @@
-using System.Threading.Channels;
-
 namespace DotLox;
 
 public class Lox
@@ -23,7 +21,7 @@ public class Lox
 
     private static void RunFile(string path)
     {
-        string source = System.IO.File.ReadAllText(path);
+        string source = File.ReadAllText(path);
         Run(source);
     }
 
@@ -40,7 +38,7 @@ public class Lox
     private static void Run(string source)
     {
         Scanner scanner = new Scanner(source);
-        List<Token> tokens = scanner.scanTokens();
+        List<Token> tokens = scanner.ScanTokens();
 
         foreach (var token in tokens)
         {
